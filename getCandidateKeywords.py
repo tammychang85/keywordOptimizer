@@ -70,7 +70,7 @@ def run(method):
     
     elif method == 2:
         keywords = useJiebaTFIDF(targetText[0])
-        fileName = 'keywords/jibeaTFIDF.txt'
+        fileName = 'keywords/jiebaTFIDF.txt'
     
     elif method == 3:
         keywords = useJiebaTextRank(targetText[0])
