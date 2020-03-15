@@ -26,7 +26,50 @@ section of our README.
 from googleads import adwords
 
 
-def getTraffics(client, targetKewords):
+def _CalculateMean(min_est, max_est):
+  if min_est and max_est:
+    return (float(min_est) + float(max_est)) / 2.0
+  else:
+    return None
+
+
+def _FormatMean(mean):
+  if mean:
+    return '%.2f' % mean
+  else:
+    return 'N/A'
+
+
+def getClicksAndImpressions(min_estimate, max_estimate):
+  """seperate estimated daily clicks and impressions form the results of requests.
+
+  Args:
+    min_estimate: zeep.objects.StatsEstimate containing a minimum estimate from the
+      TrafficEstimatorService response.
+    max_estimate: zeep.objects.StatsEstimate containing a maximum estimate from the
+      TrafficEstimatorService response.
+  """
+  # Find the mean of the min and max values.
+  # mean_avg_cpc = (_CalculateMean(min_estimate['averageCpc']['microAmount'],
+  #                                max_estimate['averageCpc']['microAmount'])
+  #                 if 'averageCpc' in min_estimate
+  #                 and min_estimate['averageCpc'] else None)
+  # mean_avg_pos = (_CalculateMean(min_estimate['averagePosition'],
+  #                                max_estimate['averagePosition'])
+  #                 if 'averagePosition' in min_estimate
+  #                 and min_estimate['averagePosition'] else None)
+  # mean_total_cost = _CalculateMean(min_estimate['totalCost']['microAmount'],
+  #                                  max_estimate['totalCost']['microAmount'])
+
+  mean_clicks = _CalculateMean(min_estimate['clicksPerDay'],
+                               max_estimate['clicksPerDay'])
+  mean_impressions = _CalculateMean(min_estimate['impressionsPerDay'],
+                                   max_estimate['impressionsPerDay'])
+
+  return (mean_clicks, mean_impressions)
+
+
+def getEstimations(client, targetKewords):
   # Initialize appropriate service.
   traffic_estimator_service = client.GetService(
       'TrafficEstimatorService', version='v201809')
@@ -85,35 +128,16 @@ def getTraffics(client, targetKewords):
       'campaignEstimateRequests': campaign_estimate_requests,
   }
 
-  # Optional: Request a list of campaign-level estimates segmented by
-  # platform.
-  selector['platformEstimateRequested'] = False
-
   # Get traffic estimates.
   estimates = traffic_estimator_service.get(selector)
-
   campaign_estimate = estimates['campaignEstimates'][0]
 
-  # Display the campaign level estimates segmented by platform.
-  # if 'platformEstimates' in campaign_estimate:
-  #   platform_template = ('Results for the platform with ID: "%d" and name: '
-  #                        '"%s".')
-  #   for platform_estimate in campaign_estimate['platformEstimates']:
-  #     platform = platform_estimate['platform']
-  #     DisplayEstimate(platform_template % (platform['id'],
-  #                                          platform['platformName']),
-  #                     platform_estimate['minEstimate'],
-  #                     platform_estimate['maxEstimate'])
-
-  # Display the keyword estimates.
+  # record the keyword estimates.
   estimationList = []
   if 'adGroupEstimates' in campaign_estimate:
     ad_group_estimate = campaign_estimate['adGroupEstimates'][0]
     if 'keywordEstimates' in ad_group_estimate:
       keyword_estimates = ad_group_estimate['keywordEstimates']
-      keyword_template = ('Results for the keyword with text "%s" and match '
-                          'type "%s":')
-
       keyword_estimates_and_requests = zip(keyword_estimates,
                                            keyword_estimate_requests)
 
@@ -122,63 +146,10 @@ def getTraffics(client, targetKewords):
           continue
         keyword = keyword_tuple[1]['keyword']
         keyword_estimate = keyword_tuple[0]
-        estimationList.append((keyword['text'], DisplayEstimate(keyword_template % (keyword['text'], keyword['matchType']), keyword_estimate['min'], keyword_estimate['max'])))
-  print(estimationList)
-  #return estimationList
-
-
-def _CalculateMean(min_est, max_est):
-  if min_est and max_est:
-    return (float(min_est) + float(max_est)) / 2.0
-  else:
-    return None
-
-
-def _FormatMean(mean):
-  if mean:
-    return '%.2f' % mean
-  else:
-    return 'N/A'
-
-
-def DisplayEstimate(message, min_estimate, max_estimate):
-  """Displays mean average cpc, position, clicks, and total cost for estimate.
-
-  Args:
-    message: str message to display for the given estimate.
-    min_estimate: zeep.objects.StatsEstimate containing a minimum estimate from the
-      TrafficEstimatorService response.
-    max_estimate: zeep.objects.StatsEstimate containing a maximum estimate from the
-      TrafficEstimatorService response.
-  """
-  # Find the mean of the min and max values.
-  mean_avg_cpc = (_CalculateMean(min_estimate['averageCpc']['microAmount'],
-                                 max_estimate['averageCpc']['microAmount'])
-                  if 'averageCpc' in min_estimate
-                  and min_estimate['averageCpc'] else None)
-  mean_avg_pos = (_CalculateMean(min_estimate['averagePosition'],
-                                 max_estimate['averagePosition'])
-                  if 'averagePosition' in min_estimate
-                  and min_estimate['averagePosition'] else None)
-  mean_clicks = _CalculateMean(min_estimate['clicksPerDay'],
-                               max_estimate['clicksPerDay'])
-  mean_total_cost = _CalculateMean(min_estimate['totalCost']['microAmount'],
-                                   max_estimate['totalCost']['microAmount'])
-
-  print(message)
-  print('  Estimated average CPC: %s' % _FormatMean(mean_avg_cpc))
-  print('  Estimated ad position: %s' % _FormatMean(mean_avg_pos))
-  print('  Estimated daily clicks: %s' % _FormatMean(mean_clicks))
-  print('  Estimated daily cost: %s' % _FormatMean(mean_total_cost))
-
-  return mean_avg_cpc
+        estimationList.append((keyword['text'], getClicksAndImpressions(keyword_estimate['min'], keyword_estimate['max'])))
+        
+  return estimationList
 
 
 def run(targetKewords):
-  getTraffics(adwords.AdWordsClient.LoadFromStorage(), targetKewords)
-
-if __name__ == '__main__':
-  # Initialize client object.
-  adwords_client = adwords.AdWordsClient.LoadFromStorage()
-
-  getTraffics(adwords_client)
+  getEstimations(adwords.AdWordsClient.LoadFromStorage(), targetKewords)
