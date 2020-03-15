@@ -152,4 +152,5 @@ def getEstimations(client, targetKewords):
 
 
 def run(targetKewords):
-  getEstimations(adwords.AdWordsClient.LoadFromStorage(), targetKewords)
+  estimations = getEstimations(adwords.AdWordsClient.LoadFromStorage(), targetKewords)
+  return estimations
