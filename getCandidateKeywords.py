@@ -32,6 +32,7 @@ def useJiebaTextRank(targetText):
     output = jieba.analyse.textrank(targetText, topK=10, withWeight=False, allowPOS=('ns', 'n', 'vn', 'v'))
     return output
 
+
 def useCkipRake(targetText, mode):
     output = seperate(MyRake.run(MyCkip.getWSList(targetText), 1, mode))
     return output
@@ -47,12 +48,12 @@ def outputResults(keywordsList, fileName):
             f.write(eachKeyword + ' ')
 
 
-def run(method):
+def run(method, textPath):
 
-    targetText = []
-    with open('data/testCase/Google評論.txt','r',encoding="utf-8") as f:
+    targetText = [] # record the text for the use of jieba and ckip
+    with open(textPath,'r',encoding="utf-8") as f:
         targetText.append(f.read())
-    with open('data/testCase/Google評論.txt','r',encoding="utf-8") as f:
+    with open(textPath,'r',encoding="utf-8") as f:
         targetText.append(f.readlines())
 
     keywords = []
@@ -120,7 +121,8 @@ def run(method):
     outputResults(keywords, fileName)
     print(fileName, 'done')
 
+
 if __name__ == '__main__':
     method = int(input('choose a method： '))
-    #targetText = 
-    run(method)
+    textPath = input('enter a text path')
+    run(method, textPath)
