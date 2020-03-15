@@ -23,14 +23,41 @@ from google.ads.google_ads.errors import GoogleAdsException
 # Location IDs are listed here: https://developers.google.com/adwords/api/docs/appendix/geotargeting
 # and they can also be retrieved using the GeoTargetConstantService as shown
 # here: https://developers.google.com/google-ads/api/docs/targeting/location-targeting
-_DEFAULT_LOCATION_IDS = '9075967'  # location ID for New York, NY
+_DEFAULT_LOCATION_IDS = '1012825'  # location ID for New Taipei( 9040379 for Taipei city)
 # A language criterion ID. For example, specify 1000 for English. For more
 # information on determining this value, see the below link:
 # https://developers.google.com/adwords/api/docs/appendix/codes-formats#languages.
-_DEFAULT_LANGUAGE_ID = '1018'  # language ID for English
+_DEFAULT_LANGUAGE_ID = '1018'  # language ID for traditional chinese
 
 
-def main(client, customer_id, location_ids, language_id, keywords, page_url):
+def map_keywords_to_string_values(client, keywords):
+    keyword_protos = []
+    for keyword in keywords:
+        string_val = client.get_type('StringValue')
+        string_val.value = keyword
+        keyword_protos.append(string_val)
+    return keyword_protos
+
+
+def map_locations_to_string_values(client, location_ids):
+    gtc_service = client.get_service('GeoTargetConstantService', version='v3')
+    locations = []
+    for location_id in location_ids:
+        location = client.get_type('StringValue')
+        location.value = gtc_service.geo_target_constant_path(location_id)
+        locations.append(location)
+    return locations
+
+
+def map_language_to_string_value(client, language_id):
+    language = client.get_type('StringValue')
+    language.value = client.get_service('LanguageConstantService',
+                                        version='v3').language_constant_path(
+                                            language_id)
+    return language
+
+
+def getKeywordIdeas(client, location_ids, language_id, customer_id,  keywords, page_url):
     keyword_plan_idea_service = client.get_service('KeywordPlanIdeaService',
                                                    version='v3')
     keyword_competition_level_enum = (
@@ -84,14 +111,16 @@ def main(client, customer_id, location_ids, language_id, keywords, page_url):
             url_seed=url_seed, keyword_seed=keyword_seed,
             keyword_and_url_seed=keyword_url_seed)
 
+        ideaList = [] # record keywords
         for idea in keyword_ideas.results:
             competition_value = keyword_competition_level_enum.Name(
                 idea.keyword_idea_metrics.competition)
-            print('Keyword idea text "{}" has {} average monthly searches and '
-                  '"{}" competition.\n'.format(
-                      idea.text.value,
-                      idea.keyword_idea_metrics.avg_monthly_searches.value,
-                      competition_value))
+            
+            # optional: idea.keyword_idea_metrics.avg_monthly_searches.value, competition_value
+            ideaList.append(idea.text.value)
+
+        return ideaList
+
     except GoogleAdsException as ex:
         print('Request with ID "{}" failed with status "{}" and includes the '
               'following errors:'.format(ex.request_id, ex.error.code().name))
@@ -104,31 +133,24 @@ def main(client, customer_id, location_ids, language_id, keywords, page_url):
         sys.exit(1)
 
 
-def map_keywords_to_string_values(client, keywords):
-    keyword_protos = []
-    for keyword in keywords:
-        string_val = client.get_type('StringValue')
-        string_val.value = keyword
-        keyword_protos.append(string_val)
-    return keyword_protos
+def run(customer_id, targets, mode=0):
+    # GoogleAdsClient will read the google-ads.yaml configuration file in the
+    # home directory if none is specified.
+    google_ads_client = GoogleAdsClient.load_from_storage()
+    location_ids = [_DEFAULT_LOCATION_IDS]
+    language_id = _DEFAULT_LANGUAGE_ID
+    customer_id = customer_id
+    # choos to use keywords file or url, 0:for file(default), 1:for url
+    if mode ==0:
+        keywords = targets
+        page_url = None
+    else:
+        page_url =targets
+        keywords = None
 
+    keywordIdeas = getKeywordIdeas(google_ads_client, location_ids, language_id, customer_id, keywords, page_url)
 
-def map_locations_to_string_values(client, location_ids):
-    gtc_service = client.get_service('GeoTargetConstantService', version='v3')
-    locations = []
-    for location_id in location_ids:
-        location = client.get_type('StringValue')
-        location.value = gtc_service.geo_target_constant_path(location_id)
-        locations.append(location)
-    return locations
-
-
-def map_language_to_string_value(client, language_id):
-    language = client.get_type('StringValue')
-    language.value = client.get_service('LanguageConstantService',
-                                        version='v3').language_constant_path(
-                                            language_id)
-    return language
+    return keywordIdeas
 
 
 if __name__ == '__main__':
@@ -165,5 +187,6 @@ if __name__ == '__main__':
     location_ids = [loc for loc in args.location_ids.split(',') if loc]
     keywords = [keyword for keyword in args.keywords.split(',') if keyword]
 
-    main(google_ads_client, args.customer_id, location_ids, args.language_id,
+    #print(args.customer_id, location_ids, args.language_id, keywords, args.page_url)
+    getKeywordIdeas(google_ads_client, location_ids, args.language_id, args.customer_id,
          keywords, args.page_url)
