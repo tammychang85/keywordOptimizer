@@ -23,7 +23,7 @@ from google.ads.google_ads.errors import GoogleAdsException
 # Location IDs are listed here: https://developers.google.com/adwords/api/docs/appendix/geotargeting
 # and they can also be retrieved using the GeoTargetConstantService as shown
 # here: https://developers.google.com/google-ads/api/docs/targeting/location-targeting
-_DEFAULT_LOCATION_IDS = '1012825'  # location ID for New Taipei( 9040379 for Taipei city)
+_DEFAULT_LOCATION_IDS = ['1012825', '9040379']  # location ID for New Taipei and Taipei city (Max 10)
 # A language criterion ID. For example, specify 1000 for English. For more
 # information on determining this value, see the below link:
 # https://developers.google.com/adwords/api/docs/appendix/codes-formats#languages.
@@ -137,7 +137,7 @@ def run(customer_id, targets, mode=0):
     # GoogleAdsClient will read the google-ads.yaml configuration file in the
     # home directory if none is specified.
     google_ads_client = GoogleAdsClient.load_from_storage()
-    location_ids = [_DEFAULT_LOCATION_IDS]
+    location_ids = _DEFAULT_LOCATION_IDS
     language_id = _DEFAULT_LANGUAGE_ID
     customer_id = customer_id
     # choos to use keywords file or url, 0:for file(default), 1:for url
