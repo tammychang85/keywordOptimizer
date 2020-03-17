@@ -61,17 +61,22 @@ def findAlternatives(customerID, currentPopulation, parentNum):
     return alternatives
 
 
-# combine alternativePopulation and currentPopulation, remove the worst ones to fit the maxPopulaton(if needed)
+# combine alternativePopulation and currentPopulation, remove the worst ones to fit the maxPopulaton(if need)
 # return the nextPopulaion and improvement of the iteration
 def evaluate(currentPopulation, alternativePopulation, maxPopulation):
-    temp = currentPopulation + alternativePopulation
-    temp.sort(key=lambda x:x[1], reverse = True)
+    temp1 = currentPopulation + alternativePopulation
+    temp1.sort(key=lambda x:x[1], reverse = True)
+    temp2 = []
+    # remove duplicate keywords
+    for keyword in temp1:
+        if keyword not in temp2:
+            temp2.append(keyword)
+
     nextPopulation = []
-    
-    if len(temp) > maxPopulation:
-        nextPopulation = temp[0:maxPopulation]
+    if len(temp2) > maxPopulation:
+        nextPopulation = temp2[0:maxPopulation]
     else:
-        nextPopulation = temp
+        nextPopulation = temp2
 
     currentScore = sum(score[1] for score in currentPopulation) # total scores of the currentPopulation
     nextScore = sum(score[1] for score in nextPopulation) # total scors of the nexttPopulation
@@ -103,9 +108,12 @@ def optimize(customerID, keywordSources, strategies=None, mode=0):
         cruuentIterarion += 1
 
     # seperate keywords from their scores
-    outputs = []
+    keywords = []
     for result in currentPopulation:
-        outputs.append(result[0])
+        keywords.append(result[0])
+
+    # retrive monthly searches value competition value for keywords
+    outputs = getkeywords.run(customerID, keywords, moreInfo=1)[0:len(keywords)]
     
     print('cruuentIterarion:', cruuentIterarion, 'currentImprovement:', currentImprovement)
     print('results:', outputs)

@@ -57,7 +57,7 @@ def map_language_to_string_value(client, language_id):
     return language
 
 
-def getKeywordIdeas(client, location_ids, language_id, customer_id,  keywords, page_url):
+def getKeywordIdeas(client, location_ids, language_id, customer_id,  keywords, page_url, moreInfo):
     keyword_plan_idea_service = client.get_service('KeywordPlanIdeaService',
                                                    version='v3')
     keyword_competition_level_enum = (
@@ -117,7 +117,10 @@ def getKeywordIdeas(client, location_ids, language_id, customer_id,  keywords, p
                 idea.keyword_idea_metrics.competition)
             
             # optional: idea.keyword_idea_metrics.avg_monthly_searches.value, competition_value
-            ideaList.append(idea.text.value)
+            if moreInfo == 0:
+                ideaList.append(idea.text.value)
+            else:
+                ideaList.append((idea.text.value, idea.keyword_idea_metrics.avg_monthly_searches.value, competition_value))
 
         return ideaList
 
@@ -133,7 +136,7 @@ def getKeywordIdeas(client, location_ids, language_id, customer_id,  keywords, p
         sys.exit(1)
 
 
-def run(customer_id, targets, mode=0):
+def run(customer_id, targets, mode=0, moreInfo=0):
     # GoogleAdsClient will read the google-ads.yaml configuration file in the
     # home directory if none is specified.
     google_ads_client = GoogleAdsClient.load_from_storage()
@@ -148,7 +151,7 @@ def run(customer_id, targets, mode=0):
         page_url =targets
         keywords = None
 
-    keywordIdeas = getKeywordIdeas(google_ads_client, location_ids, language_id, customer_id, keywords, page_url)
+    keywordIdeas = getKeywordIdeas(google_ads_client, location_ids, language_id, customer_id, keywords, page_url, moreInfo)
 
     return keywordIdeas
 
