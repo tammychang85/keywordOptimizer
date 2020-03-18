@@ -1,5 +1,12 @@
+# -*- coding: utf-8 -*-
+import locale
+import sys
+import _locale
 import generateKeywordIdeas as getkeywords
 import estimateKeywordTraffic as getTraffics
+
+
+_locale._getdefaultlocale = (lambda *args: ['en_US', 'UTF-8'])
 
 
 # set default strategy parameters
@@ -78,8 +85,8 @@ def evaluate(currentPopulation, alternativePopulation, maxPopulation):
     else:
         nextPopulation = temp2
 
-    currentScore = sum(score[1] for score in currentPopulation) # total scores of the currentPopulation
-    nextScore = sum(score[1] for score in nextPopulation) # total scors of the nexttPopulation
+    currentScore = sum(score[1] for score in currentPopulation) / len(currentPopulation) # average scores of the currentPopulation
+    nextScore = sum(score[1] for score in nextPopulation) / len(nextPopulation) # average scors of the nexttPopulation
     iterationImprovement = (nextScore - currentScore) / currentScore # improvement rate of this iteration
     return nextPopulation , iterationImprovement
 
