@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 #!/usr/bin/env python
 #
 # Copyright 2016 Google Inc. All Rights Reserved.
@@ -22,8 +24,13 @@ directory. For more information, see the "Caching authentication information"
 section of our README.
 
 """
-
+import sys
+import locale
+import _locale
 from googleads import adwords
+
+
+_locale._getdefaultlocale = (lambda *args: ['en_US', 'UTF-8'])
 
 
 def _CalculateMean(min_est, max_est):

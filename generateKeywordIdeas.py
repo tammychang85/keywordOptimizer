@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 #!/usr/bin/env python
 # Copyright 2019 Google LLC
 #
@@ -17,8 +19,15 @@
 
 import argparse
 import sys
+import locale
+import _locale
 from google.ads.google_ads.client import GoogleAdsClient
 from google.ads.google_ads.errors import GoogleAdsException
+
+
+_locale._getdefaultlocale = (lambda *args: ['en_US', 'UTF-8'])
+
+
 
 # Location IDs are listed here: https://developers.google.com/adwords/api/docs/appendix/geotargeting
 # and they can also be retrieved using the GeoTargetConstantService as shown
