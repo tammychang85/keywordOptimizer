@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-import locale
-import sys
 import _locale
 import generateKeywordIdeas as getkeywords
 import estimateKeywordTraffic as getTraffics
@@ -10,7 +8,7 @@ _locale._getdefaultlocale = (lambda *args: ['en_US', 'UTF-8'])
 
 
 # set default strategy parameters
-def setStrategy():
+def getDefaultStrategy():
     maxPopulation = 10 # maximum of keyword population
     minImprovement = 0.01 # minimum improvement rate of keywords acceptable between two iterations
     maxIteration = 10 # how many rouds of optimization shoud be taken
@@ -18,13 +16,13 @@ def setStrategy():
     return maxPopulation, maxIteration, minImprovement, parentNum
 
 
-# get seedKeywords depends on the keywordSources and mode
-# mode 0 :use keywords, keywordSources is the path of a txt file (default)
-# mode 1: use url, keywordSources is the url of the target web page
+# get seedKeywords depends on the keywordSources and seedmode
+# seedmode 0 :use keywords, keywordSources is the path of a txt file (default)
+# seedmode 1: use url, keywordSources is the url of the target web page
 # return a string list of keywords
-def generateSeed(keywordSources, customerID, mode=0):
+def generateSeed(keywordSources, customerID, seedMode=0):
     seedKeywords = []
-    if mode == 0:
+    if seedMode == 0:
         temp = []
         with open(keywordSources,'r', encoding="utf-8") as f:
             temp = f.read().strip().split(' ')
@@ -35,27 +33,39 @@ def generateSeed(keywordSources, customerID, mode=0):
                 seedKeywords.append(keyword)
 
     else:
-        seedKeywords = getkeywords.run(customerID, keywordSources, mode=1) # call google api
+        seedKeywords = getkeywords.run(customerID, keywordSources, seedMode=1) # call google api
     return seedKeywords
 
 
 # estimate traffic for keywords
-# return a list of keywords with their traffic estimations
-def estimateTraffic(keywords):
+# return a list of keywords with traffic estimations depends on the scoreMode
+# seedMode 0: get click through rate; 1:get daily click; 2:get daily impression
+# seedMode 3: get both daily click and impression
+def estimateTraffic(keywords, scoreMode):
     keywordRequests = []
     for eachKeyword in keywords:
         keywordRequests.append({'text': eachKeyword, 'matchType':'EXACT'})
 
-    estimations = getTraffics.run(keywordRequests)# call google api
+    estimations = getTraffics.run(keywordRequests, scoreMode)# call google api
     return estimations
 
 
 # calculate scores for keywords by traffic estimations
 # return a sorted list of keywords with their scores
-def calaulateScore(keywordEstimations):
+def calaulateScore(keywordEstimations, scoreMode):
     scoreList = []
-    for eachEstimation in keywordEstimations:
-        scoreList.append({'text': eachEstimation['text'], 'score': eachEstimation['click'] + eachEstimation['impression']})
+    if scoreMode == 0:
+        for eachEstimation in keywordEstimations:
+            scoreList.append({'text': eachEstimation['text'], 'score': eachEstimation['clickThroughRate']})
+    elif scoreMode == 1:
+        for eachEstimation in keywordEstimations:
+            scoreList.append({'text': eachEstimation['text'], 'score': eachEstimation['click']})
+    elif scoreMode == 2:
+        for eachEstimation in keywordEstimations:
+            scoreList.append({'text': eachEstimation['text'], 'score': eachEstimation['impression']})
+    else:
+        for eachEstimation in keywordEstimations:
+            scoreList.append({'text': eachEstimation['text'], 'score': eachEstimation['click'] + eachEstimation['impression']})
 
     scoreList.sort(key=lambda x:x['score'], reverse=True)
     return scoreList
@@ -100,11 +110,11 @@ def evaluate(currentPopulation, alternativePopulation, maxPopulation):
 
 
 # coordinate all the funtions above during the process of optimization
-def optimize(customerID, keywordSources, strategies=None, mode=0):
+def optimize(customerID, keywordSources, strategies=None, seedMode=0, scoreMode=0):
     # initialize strategy parameters for optimization
     if strategies == None:
         # default strategies
-        maxPopulation, maxIteration, minImprovement, parentNum = setStrategy()
+        maxPopulation, maxIteration, minImprovement, parentNum = getDefaultStrategy()
     else:
         # manual strategies
         maxPopulation, maxIteration, minImprovement, parentNum = strategies
@@ -112,13 +122,13 @@ def optimize(customerID, keywordSources, strategies=None, mode=0):
     currentImprovement = float('inf')
 
     # optimization starts
-    seedKeywords = generateSeed(keywordSources, customerID, mode) # get a string list of keywords
-    estimations = estimateTraffic(seedKeywords) # get traffic estimations of seedKeywords
-    currentPopulation = calaulateScore(estimations) # get a sorted list of keywords with socres
+    seedKeywords = generateSeed(keywordSources, customerID, seedMode) # get a string list of keywords
+    estimations = estimateTraffic(seedKeywords, scoreMode) # get traffic estimations of seedKeywords
+    currentPopulation = calaulateScore(estimations, scoreMode) # get a sorted list of keywords with socres
 
     while currentIterarion < maxIteration and currentImprovement >= minImprovement:
         alternatives = findAlternatives(customerID, currentPopulation, parentNum)
-        alternativePopulation = calaulateScore(estimateTraffic(alternatives))
+        alternativePopulation = calaulateScore(estimateTraffic(alternatives, seedMode), scoreMode)
         currentPopulation, currentImprovement = evaluate(currentPopulation, alternativePopulation, maxPopulation)
         currentIterarion += 1
 
@@ -128,13 +138,18 @@ def optimize(customerID, keywordSources, strategies=None, mode=0):
         keywords.append(result['text'])
 
     # retrive monthly searches value competition value for keywords
-    outputs = getkeywords.run(customerID, keywords, moreInfo=1)[0:len(keywords)]
-    
-    print('currentIterarion:', currentIterarion, 'currentImprovement:', currentImprovement)
-    print('results:', outputs)
+    recommendedKeywords = getkeywords.run(customerID, keywords, moreInfo=1)[0:len(keywords)]
 
-    return outputs
+    print('currentIterarion:', currentIterarion, 'currentImprovement:', currentImprovement)
+    print('results:', recommendedKeywords)
+
+    return recommendedKeywords
 
 if __name__ == '__main__':
-    optimize(customerID, keywordSources, strategies=None, mode=0)
-
+#     targetText = []
+#     with open('data/testCase/Google評論.txt','r',encoding="utf-8") as f:
+#         targetText = f.read()
+#     print('Google' in targetText)
+    customerID = '3566761997'
+    keywordSources = 'keywords/jiebaTFIDF.txt'
+    optimize(customerID, keywordSources, strategies=None, scoreMode=0)
