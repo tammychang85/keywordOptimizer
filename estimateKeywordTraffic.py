@@ -153,7 +153,8 @@ def getEstimations(client, targetKewords):
           continue
         keyword = keyword_tuple[1]['keyword']
         keyword_estimate = keyword_tuple[0]
-        estimationList.append((keyword['text'], getClicksAndImpressions(keyword_estimate['min'], keyword_estimate['max'])))
+        click, impression = getClicksAndImpressions(keyword_estimate['min'], keyword_estimate['max'])
+        estimationList.append({'text': keyword['text'], 'click': click, 'impression': impression})
         
   return estimationList
 

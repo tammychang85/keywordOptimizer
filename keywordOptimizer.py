@@ -26,7 +26,7 @@ def generateSeed(keywordSources, customerID, mode=0):
     seedKeywords = []
     if mode == 0:
         temp = []
-        with open(keywordSources,'r',encoding="utf-8") as f:
+        with open(keywordSources,'r', encoding="utf-8") as f:
             temp = f.read().strip().split(' ')
 
         # remove duplicate keywords
@@ -53,17 +53,21 @@ def estimateTraffic(keywords):
 # calculate scores for keywords by traffic estimations
 # return a sorted list of keywords with their scores
 def calaulateScore(keywordEstimations):
-    scoreLIst = []
+    scoreList = []
     for eachEstimation in keywordEstimations:
-        scoreLIst.append([eachEstimation[0], sum(eachEstimation[1])])
-    scoreLIst.sort(key=lambda x:x[1], reverse = True)
-    return scoreLIst
+        scoreList.append({'text': eachEstimation['text'], 'score': eachEstimation['click'] + eachEstimation['impression']})
+
+    scoreList.sort(key=lambda x:x['score'], reverse=True)
+    return scoreList
 
 
 # find alternaltive keywords similar to parentKeywords
 # return a string list of keywords
 def findAlternatives(customerID, currentPopulation, parentNum):
-    parentKeywords = [keyword[0] for keyword in currentPopulation[0:parentNum]]
+    #parentKeywords = [keyword[0] for keyword in currentPopulation[0:parentNum]]
+    parentKeywords = []
+    for eachKeyword in currentPopulation:
+        parentKeywords.append(eachKeyword['text'])
     alternatives = getkeywords.run(customerID, parentKeywords)# call google api
     return alternatives
 
@@ -72,21 +76,25 @@ def findAlternatives(customerID, currentPopulation, parentNum):
 # return the nextPopulaion and improvement of the iteration
 def evaluate(currentPopulation, alternativePopulation, maxPopulation):
     temp1 = currentPopulation + alternativePopulation
-    temp1.sort(key=lambda x:x[1], reverse = True)
+    temp1.sort(key=lambda x:x['score'], reverse=True)
+
     temp2 = []
     # remove duplicate keywords
     for keyword in temp1:
         if keyword not in temp2:
             temp2.append(keyword)
 
+    # trim the population to fit maxPopulation
     nextPopulation = []
     if len(temp2) > maxPopulation:
         nextPopulation = temp2[0:maxPopulation]
     else:
         nextPopulation = temp2
 
-    currentScore = sum(score[1] for score in currentPopulation) / len(currentPopulation) # average scores of the currentPopulation
-    nextScore = sum(score[1] for score in nextPopulation) / len(nextPopulation) # average scors of the nexttPopulation
+
+    currentScore = sum(keyword['score'] for keyword in currentPopulation) / len(currentPopulation) # average scores of the currentPopulation
+    nextScore = sum(keyword['score'] for keyword in nextPopulation) / len(nextPopulation) # average scors of the nexttPopulation
+
     iterationImprovement = (nextScore - currentScore) / currentScore # improvement rate of this iteration
     return nextPopulation , iterationImprovement
 
@@ -100,29 +108,29 @@ def optimize(customerID, keywordSources, strategies=None, mode=0):
     else:
         # manual strategies
         maxPopulation, maxIteration, minImprovement, parentNum = strategies
-    cruuentIterarion = 0
+    currentIterarion = 0
     currentImprovement = float('inf')
 
     # optimization starts
     seedKeywords = generateSeed(keywordSources, customerID, mode) # get a string list of keywords
-    Estimations = estimateTraffic(seedKeywords) # get traffic estimations of seedKeywords
-    currentPopulation = calaulateScore(Estimations) # get a sorted list of keywords with socres
+    estimations = estimateTraffic(seedKeywords) # get traffic estimations of seedKeywords
+    currentPopulation = calaulateScore(estimations) # get a sorted list of keywords with socres
 
-    while cruuentIterarion < maxIteration and currentImprovement >= minImprovement:
+    while currentIterarion < maxIteration and currentImprovement >= minImprovement:
         alternatives = findAlternatives(customerID, currentPopulation, parentNum)
         alternativePopulation = calaulateScore(estimateTraffic(alternatives))
         currentPopulation, currentImprovement = evaluate(currentPopulation, alternativePopulation, maxPopulation)
-        cruuentIterarion += 1
+        currentIterarion += 1
 
     # seperate keywords from their scores
     keywords = []
     for result in currentPopulation:
-        keywords.append(result[0])
+        keywords.append(result['text'])
 
     # retrive monthly searches value competition value for keywords
     outputs = getkeywords.run(customerID, keywords, moreInfo=1)[0:len(keywords)]
     
-    print('cruuentIterarion:', cruuentIterarion, 'currentImprovement:', currentImprovement)
+    print('currentIterarion:', currentIterarion, 'currentImprovement:', currentImprovement)
     print('results:', outputs)
 
     return outputs
