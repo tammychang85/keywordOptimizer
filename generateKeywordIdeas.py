@@ -19,7 +19,6 @@
 
 import argparse
 import sys
-import locale
 import _locale
 from google.ads.google_ads.client import GoogleAdsClient
 from google.ads.google_ads.errors import GoogleAdsException
@@ -124,12 +123,15 @@ def getKeywordIdeas(client, location_ids, language_id, customer_id,  keywords, p
         for idea in keyword_ideas.results:
             competition_value = keyword_competition_level_enum.Name(
                 idea.keyword_idea_metrics.competition)
-            
-            # optional: idea.keyword_idea_metrics.avg_monthly_searches.value, competition_value
+
+            # optional: idea.keyword_idea_metrics.avg_monthly_searches.value,
+            # competition_value
             if moreInfo == 0:
                 ideaList.append(idea.text.value)
             else:
-                ideaList.append((idea.text.value, idea.keyword_idea_metrics.avg_monthly_searches.value, competition_value))
+                ideaList.append((idea.text.value,
+                                 idea.keyword_idea_metrics.avg_monthly_searches.value,
+                                 competition_value))
 
         return ideaList
 
@@ -160,7 +162,9 @@ def run(customer_id, targets, mode=0, moreInfo=0):
         page_url =targets
         keywords = None
 
-    keywordIdeas = getKeywordIdeas(google_ads_client, location_ids, language_id, customer_id, keywords, page_url, moreInfo)
+    keywordIdeas = getKeywordIdeas(google_ads_client, location_ids,
+                                   language_id, customer_id, keywords,
+                                   page_url, moreInfo)
 
     return keywordIdeas
 
@@ -169,36 +173,14 @@ if __name__ == '__main__':
     # GoogleAdsClient will read the google-ads.yaml configuration file in the
     # home directory if none is specified.
     google_ads_client = GoogleAdsClient.load_from_storage()
+    location_ids = _DEFAULT_LOCATION_IDS
+    language_id = _DEFAULT_LANGUAGE_ID
+    customer_id = '3566761997'
 
-    parser = argparse.ArgumentParser(
-        description='Generates keyword ideas from a list of seed keywords.')
-
-    # The following argument(s) should be provided to run the example.
-    parser.add_argument('-c', '--customer_id', type=str,
-                        required=True, help='The Google Ads customer ID.')
-    # For more information on determining location IDs, see:
-    parser.add_argument('-k', '--keywords', type=str, required=False,
-                        help='Comma-delimited starter keywords')
-    # https://developers.google.com/adwords/api/docs/appendix/geotargeting.
-    parser.add_argument('-l', '--location_ids', type=str,
-                        required=False, help='Comma-delimited list of location '
-                                             'criteria IDs')
-    # https://developers.google.com/adwords/api/docs/appendix/codes-formats#languages.
-    parser.add_argument('-i', '--language_id', type=str,
-                        required=False, help='Comma-delimited list of language '
-                                             'criterion IDs')
-    # Optional: Specify a URL string related to your business to generate ideas.
-    parser.add_argument('-p', '--page_url', type=str, required=False,
-                        help='A URL string related to your business')
-
-    parser.set_defaults(location_ids=_DEFAULT_LOCATION_IDS,
-                        language_id=_DEFAULT_LANGUAGE_ID, keywords='')
-
-    args = parser.parse_args()
-
-    location_ids = [loc for loc in args.location_ids.split(',') if loc]
-    keywords = [keyword for keyword in args.keywords.split(',') if keyword]
-
-    #print(args.customer_id, location_ids, args.language_id, keywords, args.page_url)
-    getKeywordIdeas(google_ads_client, location_ids, args.language_id, args.customer_id,
-         keywords, args.page_url)
+    page_url = None
+    keywords = ['SEO']
+    moreInfo = 0
+    keywordIdeas = getKeywordIdeas(google_ads_client, location_ids,
+                                   language_id, customer_id, keywords,
+                                   page_url, moreInfo)
+    print(keywordIdeas)
