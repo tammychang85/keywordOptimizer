@@ -82,11 +82,11 @@ def findAlternatives(customerID, currentPopulation, parentNum):
 
 
 # get keywords that could find in article
-def filterKeywords(articleKeyword, alternativePopulation, articleText):
+def filterKeywords(articleKeywords, alternativePopulation, articleText):
     for eachKeyword in alternativePopulation:
-        if eachKeyword['text'] in articleText and eachKeyword not in articleKeyword:
-            articleKeyword.append(eachKeyword)
-    return articleKeyword
+        if eachKeyword['text'] in articleText and eachKeyword not in articleKeywords:
+            articleKeywords.append(eachKeyword)
+    return articleKeywords
 
 
 # combine alternativePopulation and currentPopulation, remove the worst ones to fit the maxPopulaton(if need)
@@ -116,7 +116,7 @@ def evaluate(currentPopulation, alternativePopulation, maxPopulation):
 
 
 # coordinate all the funtions above during the process of optimization
-def optimize(customerID, keywordSources, articleText, strategies=None, seedMode=0, scoreMode=0):
+def optimize(customerID, keywordSources, articleText, strategies=None, seedMode=0, scoreMode=1):
     # initialize strategy parameters for optimization
     if strategies == None:
         # default strategies
@@ -132,12 +132,12 @@ def optimize(customerID, keywordSources, articleText, strategies=None, seedMode=
     articleText = seedKeywords.copy()  # keywords that exist in article
     estimations = estimateTraffic(seedKeywords, scoreMode)  # get traffic estimations of seedKeywords
     currentPopulation = calaulateScore(estimations, scoreMode)  # get a sorted list of keywords with socres
-    articleKeyword = currentPopulation.copy() # keywords that could find in the original article
+    articleKeywords = currentPopulation.copy() # keywords that could find in the original article
 
     while currentIterarion < maxIteration and currentImprovement >= minImprovement:
         alternatives = findAlternatives(customerID, currentPopulation, parentNum)
-        alternativePopulation = calaulateScore(estimateTraffic(alternatives, seedMode), scoreMode)
-        articleKeyword = filterKeywords(articleKeyword, alternativePopulation, articleText)
+        alternativePopulation = calaulateScore(estimateTraffic(alternatives, scoreMode), scoreMode)
+        articleKeywords = filterKeywords(articleKeywords, alternativePopulation, articleText)
         currentPopulation, currentImprovement = evaluate(currentPopulation, alternativePopulation, maxPopulation)
         currentIterarion += 1
 
@@ -151,9 +151,9 @@ def optimize(customerID, keywordSources, articleText, strategies=None, seedMode=
 
     print('currentIterarion:', currentIterarion, 'currentImprovement:', currentImprovement)
     print('recommendedKeywords:', recommendedKeywords)
-    print('articleKeyword:', articleKeyword)
+    print('articleKeywords:', articleKeywords)
 
-    return recommendedKeywords, articleKeyword
+    return recommendedKeywords, articleKeywords
 
 
 if __name__ == '__main__':

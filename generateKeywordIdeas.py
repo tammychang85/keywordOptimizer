@@ -17,7 +17,6 @@
 """This example generates keyword ideas from a list of seed keywords."""
 
 
-import argparse
 import sys
 import _locale
 from google.ads.google_ads.client import GoogleAdsClient
