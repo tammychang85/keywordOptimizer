@@ -64,7 +64,8 @@ def calaulateScore(keywordEstimations, scoreMode):
             scoreList.append({'text': eachEstimation['text'], 'score': eachEstimation['impression']})
     else:
         for eachEstimation in keywordEstimations:
-            scoreList.append({'text': eachEstimation['text'], 'score': eachEstimation['click'] + eachEstimation['impression']})
+            scoreList.append({'text': eachEstimation['text'], 'score': eachEstimation['click'] +
+                              eachEstimation['impression']})
 
     scoreList.sort(key=lambda x:x['score'], reverse=True)
     return scoreList
@@ -108,8 +109,10 @@ def evaluate(currentPopulation, alternativePopulation, maxPopulation):
     else:
         nextPopulation = temp2
 
-    currentScore = sum(keyword['score'] for keyword in currentPopulation) / len(currentPopulation)  # average scores of the currentPopulation
-    nextScore = sum(keyword['score'] for keyword in nextPopulation) / len(nextPopulation)  # average scors of the nexttPopulation
+    # average scores of the currentPopulation
+    currentScore = sum(keyword['score'] for keyword in currentPopulation) / len(currentPopulation)
+    # average scors of the nexttPopulation
+    nextScore = sum(keyword['score'] for keyword in nextPopulation) / len(nextPopulation)
 
     iterationImprovement = (nextScore - currentScore) / currentScore  # improvement rate of this iteration
     return nextPopulation , iterationImprovement

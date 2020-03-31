@@ -1,6 +1,7 @@
+# -*- coding:utf-8 -*-
+
 import MyRake
 import MyCkip
-import MyTFIDF
 import jieba # includes posseg in it
 import jieba.analyse # used to extract with TF-IDF & TextRank
 
@@ -22,7 +23,7 @@ def useJiebaRake(articleText, mode=0):
 
 
 def useJiebaTFIDF(articleText):
-    jieba.analyse.set_stop_words('data/stoplist/簡轉繁中文分隔詞詞庫.txt')# set stop words list
+    jieba.analyse.set_stop_words('data/stoplist/traditionalChineseConjunctionList.txt')# set stop words list
     jieba.analyse.set_idf_path('data/Dictionary/idf.txt.big')# set IDF dicti
     output = jieba.analyse.extract_tags(articleText, topK=10, withWeight=False, allowPOS=())
     return output
@@ -36,10 +37,6 @@ def useJiebaTextRank(articleText):
 def useCkipRake(articleText, mode):
     output = seperate(MyRake.run(MyCkip.getWSList(articleText), 1, mode))
     return output
-
-
-def useCkipTfIDF(articleText):
-    pass
 
 
 def outputResults(keywordsList, fileName):
@@ -85,12 +82,7 @@ def run(method, textPath):
         keywords = useCkipRake(articleText[1], 1)
         fileName = 'keywords/ckipRake2.txt'
 
-    elif method == 6:
-        # to be added
-        pass
-
     else:
-        resultList = []
         # ---extract with jieba---
         # using Rake(to extract by excluding words with positon flags in the poSprty)
         jiebaRake = useJiebaRake(articleText[0], 0)
@@ -123,6 +115,6 @@ def run(method, textPath):
 
 
 if __name__ == '__main__':
-    method = int(input('choose a method： '))
+    method = int(input('choose a method '))
     textPath = input('enter a text path')
     run(method, textPath)

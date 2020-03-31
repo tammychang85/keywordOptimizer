@@ -2,15 +2,12 @@
 Implementation of Rapid Automatic Keyword Extraction (RAKE) algorithm for Chinese
 Original algorithm described in: Rose, S., Engel, D., Cramer, N., & Cowley, W. (2010).
 Automatic Keyword Extraction from Individual Documents. In M. W. Berry & J. Kogan
-(Eds.), Text Mining: Theory and Applications: John Wiley & Sons. 
+(Eds.), Text Mining: Theory and Applications: John Wiley & Sons.
 '''
 __author__ = "Ruoyang Xu"
 
-import jieba
-import jieba.posseg as pseg
 import operator
 import json
-from collections import Counter
 
 
 # Data structure for holding data
@@ -81,17 +78,22 @@ def run(rawText, algo=0, mode=0):
     else:
         # to exclude words with positon flags in the poSprty(default)
         if mode == 0:
-            poSPrty = ['Ne','COMMACATEGORY', 'PERIODCATEGORY', 'QUESTIONCATEGORY', 'COLONCATEGORY', 'PARENTHESISCATEGORY', ' PAUSECATEGORY', 'Ta','Nf','T','V','Ng', 'WHITESPACE']
+            poSPrty = ['Ne','COMMACATEGORY', 'PERIODCATEGORY', 'QUESTIONCATEGORY', 'COLONCATEGORY',
+                       'PARENTHESISCATEGORY', ' PAUSECATEGORY', 'Ta','Nf','T','V','Ng', 'WHITESPACE']
         # to choose words with positon flags in the poSprty
         else:
             poSPrty = ['Na', 'Nb', 'Nc', 'Nd','VA', 'VB', 'VC',
-                        'CARDINA', 'DATE', 'EVENT', 'FAC', 'GPE', 'LANGUAGE', 'LAW', 
+                        'CARDINA', 'DATE', 'EVENT', 'FAC', 'GPE', 'LANGUAGE', 'LAW',
                         'LOC', 'MONEY', 'NORP', 'ORDINAL', 'ORG', 'PERCENT', 'PERSON',
                         'PRODUCT', 'QUANTITY', 'TIME', 'WORK_OF_ART']
 
 
-    swLibList = [line.rstrip('\n') for line in open("data/stoplist/繁體中文停用詞表(1209個).txt",'r',encoding="utf-8")]# Construct Stopword Lib
-    conjLibList = [line.rstrip('\n') for line in open("data/stoplist/簡轉繁中文分隔詞詞庫.txt",'r',encoding="utf-8")]# Construct Phrase Deliminator Lib
+    # Construct Stopword Lib
+    swLibList = [line.rstrip('\n') for line in
+                 open("data/stoplist/traditionalChineseStopList1209.txt",'r',encoding="utf-8")]
+    # Construct Phrase Deliminator Lib
+    conjLibList = [line.rstrip('\n') for line in
+                   open("data/stoplist/traditionalChineseConjunctionList.txt",'r',encoding="utf-8")]
     rawtextList = rawText # using different libs
 
     # Construct List of Phrases and Preliminary textList
@@ -104,9 +106,10 @@ def run(rawText, algo=0, mode=0):
 
         if algo == 0:# if use jieba
             flag = flag.lower()
-            
+
         if mode == 0:
-            if eachWord in conjLibList or not notNumStr(eachWord) or eachWord in swLibList or flag in poSPrty or eachWord == '\n' or len(eachWord) < 2 :
+            if (eachWord in conjLibList or not notNumStr(eachWord) or eachWord in swLibList or flag in poSPrty or
+                eachWord == '\n' or len(eachWord) < 2) :
                 if lastWord != '|':
                     textList.append("|")
                     lastWord = "|"
@@ -117,7 +120,8 @@ def run(rawText, algo=0, mode=0):
                     listofSingleWord[eachWord] = Word(eachWord)#  create a Word object
                 lastWord = ''
         else:
-            if eachWord in conjLibList or not notNumStr(eachWord) or eachWord in swLibList or flag not in poSPrty or eachWord == '\n' or len(eachWord) < 2 :
+            if (eachWord in conjLibList or not notNumStr(eachWord) or eachWord in swLibList or flag not in poSPrty or
+                eachWord == '\n' or len(eachWord) < 2) :
                 if lastWord != '|':
                     textList.append("|")
                     lastWord = "|"
