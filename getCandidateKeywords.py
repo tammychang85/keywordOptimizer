@@ -47,17 +47,25 @@ def outputResults(keywordsList, fileName):
 
 def run(method, textPath):
 
-    articleText = [] # record the text for the use of jieba and ckip
+    # record the texts where keywords need to be extract from
+    articleText = []
+    # save as the formatt that jieba requires
     with open(textPath,'r',encoding="utf-8") as f:
         articleText.append(f.read())
+    # save as the formatt that ckip requires
     with open(textPath,'r',encoding="utf-8") as f:
         articleText.append(f.readlines())
 
+    # restore the extracted keywords
     keywords = []
-    fileName = '' # name of the result txt file
+
+    # name of the result txt file
+    fileName = ''
 
     # choosing method
-    # 0:jiebaRake1, 1:jiebaRake2, 2:jibaTFIDF, 3:jiebaTexkRake, 4:ckipRake, 5:ckipRake2, 6:ckipTFIDF, 7:use all
+    # 0:jiebaRake1, 1:jiebaRake2, 2:jibaTFIDF, 3:jiebaTexkRake, 4:ckipRake, 5:ckipRake2, 6:use all
+    # difference between jiebaRake1 and jiebaRake2: the rule of choosing words
+    # the former excludes words with some specific positon flags, while the latter chooses words with some specific positon flags
     if method == 0:
         keywords = useJiebaRake(articleText[0], 0)
         fileName = 'keywords/jiebaRake1.txt'
@@ -106,10 +114,17 @@ def run(method, textPath):
         # using TFIDF(to be added)
 
         # results
-        keywords = jiebaRake + jiebaRake2 + jiebaTFIDF + jiebaTextRank + ckipRake + ckipRake2
+        temp = jiebaRake + jiebaRake2 + jiebaTFIDF + jiebaTextRank + ckipRake + ckipRake2
+
+        # filter those duplicated keywords
+        for eachKeyword in temp:
+            if eachKeyword not in keywords:
+                keywords.append(eachKeyword)
+
         fileName = 'keywords/All.txt'
 
-    # outout the results
+
+    # write the output txt file
     outputResults(keywords, fileName)
     print(fileName, 'done')
 
